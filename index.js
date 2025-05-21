@@ -3,7 +3,7 @@ const cors = require('cors');
 const app = express();
 const port = process.env.PORT || 3000;
 require('dotenv').config();
-const { MongoClient, ServerApiVersion } = require('mongodb');
+const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 
 
 app.use(cors());
@@ -52,6 +52,19 @@ async function run() {
             const result = await groupCollection.findOne(query)
             res.send(result)
         })
+        // group details ubdated from client to server
+        app.put('/allgroups/:id', async (req, res) => {
+            const id = req.params.id;
+            const filter = { _id: new ObjectId(id) }
+            const options = { upsert: true };
+            const newGroup = req.body;
+            const updatedDoc = {
+                $set: newGroup
+            }
+            const result = await groupCollection.updateOne(filter, updatedDoc, options);
+            res.send(result);
+        })
+
         // Send a ping to confirm a successful connection
         await client.db("admin").command({ ping: 1 });
         console.log("Pinged your deployment. You successfully connected to MongoDB!");
