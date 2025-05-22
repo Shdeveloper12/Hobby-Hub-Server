@@ -3,20 +3,13 @@ const cors = require('cors');
 const app = express();
 const port = process.env.PORT || 3000;
 require('dotenv').config();
-const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
-
+const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb'); //Added ObjectId
 
 app.use(cors());
 app.use(express.json());
 
-
-
-
-
-
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.dgti16b.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0`;
 
-// Create a MongoClient with a MongoClientOptions object to set the Stable API version
 const client = new MongoClient(uri, {
     serverApi: {
         version: ServerApiVersion.v1,
@@ -26,61 +19,65 @@ const client = new MongoClient(uri, {
 });
 
 async function run() {
-
     try {
-        // Connect the client to the server	(optional starting in v4.7)
         await client.connect();
 
-        // create file to mongodb server
         const groupCollection = client.db('hobbyHubDB').collection('allgroups');
+
+        //  GET all groups (optionally filtered by creator email)
         app.get('/allgroups', async (req, res) => {
-            const result = await groupCollection.find().toArray();
+            const email = req.query.email;
+            const query = email ? { creatorEmail: email } : {};
+            const result = await groupCollection.find(query).toArray();
             res.send(result);
-        })
-        // allgroups data send to mongodb server
+        });
+
+        // POST new group
         app.post('/allgroups', async (req, res) => {
             const groupData = req.body;
-            console.log(groupData);
+
+            if (!groupData.creatorEmail) {
+                return res.status(400).json({ error: 'creatorEmail is required' });
+            }
+
             const result = await groupCollection.insertOne(groupData);
             res.send(result);
-        })
+        });
 
-        // allgroups data received to client side from mongodb
-        app.get('/allgroups/:id', async (req, res) => {
-            const id = req.params.id;
-            const query = { _id: new ObjectId(id) }
-            const result = await groupCollection.findOne(query)
-            res.send(result)
-        })
-        // group details ubdated from client to server
+        //PUT update group
         app.put('/allgroups/:id', async (req, res) => {
             const id = req.params.id;
-            const filter = { _id: new ObjectId(id) }
+            const filter = { _id: new ObjectId(id) };
             const options = { upsert: true };
-            const newGroup = req.body;
+            const updatedGroup = req.body;
             const updatedDoc = {
-                $set: newGroup
-            }
+                $set: updatedGroup,
+            };
             const result = await groupCollection.updateOne(filter, updatedDoc, options);
             res.send(result);
-        })
+        });
 
-        // Send a ping to confirm a successful connection
+        // ✅ DELETE group
+        app.delete('/allgroups/:id', async (req, res) => {
+            const id = req.params.id;
+            const query = { _id: new ObjectId(id) };
+            const result = await groupCollection.deleteOne(query);
+            res.send(result);
+        });
+
         await client.db("admin").command({ ping: 1 });
-        console.log("Pinged your deployment. You successfully connected to MongoDB!");
+        console.log("✅ Connected to MongoDB");
     } finally {
-        // Ensures that the client will close when you finish/error
-        // await client.close();
+        // await client.close(); // keep alive for now
     }
 }
 
-
 run().catch(console.dir);
 
-
 app.get('/', (req, res) => {
-    res.send('my hobby website')
+    res.send('My hobby website backend is running');
 });
+
 app.listen(port, () => {
-    console.log(`my hobby server running on port ${port} `)
-})
+    console.log(`🚀 Server running on port ${port}`);
+});
