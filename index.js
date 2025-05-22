@@ -24,15 +24,20 @@ async function run() {
 
         const groupCollection = client.db('hobbyHubDB').collection('allgroups');
 
-        //  GET all groups (optionally filtered by creator email)
+        //  GET all groups 
         app.get('/allgroups', async (req, res) => {
             const email = req.query.email;
             const query = email ? { creatorEmail: email } : {};
             const result = await groupCollection.find(query).toArray();
             res.send(result);
         });
-
-        // POST new group
+        app.get('/allgroups/:id', async (req, res) => {
+            const id = req.params.id;
+            const query = { _id: new ObjectId(id) }
+            const result = await groupCollection.findOne(query)
+            res.send(result)
+        })
+        //  POST new group
         app.post('/allgroups', async (req, res) => {
             const groupData = req.body;
 
@@ -44,7 +49,7 @@ async function run() {
             res.send(result);
         });
 
-        //PUT update group
+        // PUT update group
         app.put('/allgroups/:id', async (req, res) => {
             const id = req.params.id;
             const filter = { _id: new ObjectId(id) };
@@ -57,7 +62,7 @@ async function run() {
             res.send(result);
         });
 
-        // ✅ DELETE group
+        // DELETE group
         app.delete('/allgroups/:id', async (req, res) => {
             const id = req.params.id;
             const query = { _id: new ObjectId(id) };
@@ -66,7 +71,7 @@ async function run() {
         });
 
         await client.db("admin").command({ ping: 1 });
-        console.log("✅ Connected to MongoDB");
+        console.log(" Connected to MongoDB");
     } finally {
         // await client.close(); // keep alive for now
     }
@@ -79,5 +84,5 @@ app.get('/', (req, res) => {
 });
 
 app.listen(port, () => {
-    console.log(`🚀 Server running on port ${port}`);
+    console.log(`Server running on port ${port}`);
 });
