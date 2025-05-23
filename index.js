@@ -27,7 +27,7 @@ async function run() {
         //  GET all groups 
         app.get('/allgroups', async (req, res) => {
             const email = req.query.email;
-            const query = email ? { creatorEmail: email } : {};
+            const query = email ? { email: email } : {};
             const result = await groupCollection.find(query).toArray();
             res.send(result);
         });
@@ -41,9 +41,7 @@ async function run() {
         app.post('/allgroups', async (req, res) => {
             const groupData = req.body;
 
-            if (!groupData.creatorEmail) {
-                return res.status(400).json({ error: 'creatorEmail is required' });
-            }
+    
 
             const result = await groupCollection.insertOne(groupData);
             res.send(result);
