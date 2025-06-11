@@ -5,6 +5,7 @@ const port = process.env.PORT || 3000;
 require('dotenv').config();
 const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb'); //Added ObjectId
 
+// middleware
 app.use(cors());
 app.use(express.json());
 
@@ -20,7 +21,7 @@ const client = new MongoClient(uri, {
 
 async function run() {
     try {
-        await client.connect();
+        // await client.connect();
 
         const groupCollection = client.db('hobbyHubDB').collection('allgroups');
 
@@ -40,9 +41,6 @@ async function run() {
         //  POST new group
         app.post('/allgroups', async (req, res) => {
             const groupData = req.body;
-
-    
-
             const result = await groupCollection.insertOne(groupData);
             res.send(result);
         });
@@ -67,9 +65,9 @@ async function run() {
             const result = await groupCollection.deleteOne(query);
             res.send(result);
         });
-
-        await client.db("admin").command({ ping: 1 });
         console.log(" Connected to MongoDB");
+    
+        
     } finally {
         // await client.close(); // keep alive for now
     }
