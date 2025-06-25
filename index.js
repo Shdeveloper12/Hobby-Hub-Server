@@ -24,6 +24,7 @@ async function run() {
     // await client.connect();
 
     const groupCollection = client.db("hobbyHubDB").collection("allgroups");
+    const reviewCollection = client.db("hobbyHubDB").collection("reviews");
 
     //  GET all groups
     app.get("/allgroups", async (req, res) => {
@@ -77,6 +78,39 @@ async function run() {
       const id = req.params.id;
       const query = { _id: new ObjectId(id) };
       const result = await groupCollection.deleteOne(query);
+      res.send(result);
+    });
+
+    // Get all reviews
+    app.get("/reviews", async (req, res) => {
+      const result = await reviewCollection.find().toArray();
+      res.send(result);
+    });
+
+    // Add a review
+    app.post("/reviews", async (req, res) => {
+      const review = req.body;
+      const result = await reviewCollection.insertOne(review);
+      res.send(result);
+    });
+
+    // Update a review
+    app.put("/reviews/:id", async (req, res) => {
+      const id = req.params.id;
+      const updated = req.body;
+      const result = await reviewCollection.updateOne(
+        { _id: new ObjectId(id) },
+        { $set: updated }
+      );
+      res.send(result);
+    });
+
+    // Delete a review
+    app.delete("/reviews/:id", async (req, res) => {
+      const id = req.params.id;
+      const result = await reviewCollection.deleteOne({
+        _id: new ObjectId(id),
+      });
       res.send(result);
     });
 
