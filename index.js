@@ -38,6 +38,16 @@ async function run() {
       const result = await groupCollection.findOne(query);
       res.send(result);
     });
+
+    //Popular hobbies
+    app.get("/popular-hobbies", async (req, res) => {
+      const result = await groupCollection
+        .find({})
+        .sort({ member: -1 }) // Sort by max members
+        .limit(8)
+        .toArray();
+      res.send(result);
+    });
     //  POST new group
     app.post("/allgroups", async (req, res) => {
       const groupData = req.body;
