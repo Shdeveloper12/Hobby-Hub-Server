@@ -1,7 +1,7 @@
 const express = require("express");
 const cors = require("cors");
 const app = express();
-const port = process.env.PORT || 3000;
+const port = process.env.PORT || 3001;
 require("dotenv").config();
 const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
 
@@ -26,103 +26,119 @@ async function run() {
     const groupCollection = client.db("hobbyHubDB").collection("allgroups");
     const reviewCollection = client.db("hobbyHubDB").collection("reviews");
 
-    //  GET all groups
+    // ---------------- ALL GROUP ROUTES ----------------
+
     app.get("/allgroups", async (req, res) => {
       const email = req.query.email;
       const query = email ? { email: email } : {};
       const result = await groupCollection.find(query).toArray();
       res.send(result);
     });
+
     app.get("/allgroups/:id", async (req, res) => {
       const id = req.params.id;
-      const query = { _id: new ObjectId(id) };
-      const result = await groupCollection.findOne(query);
+      if (!ObjectId.isValid(id)) {
+        return res.status(400).send({ message: "Invalid ID" });
+      }
+      const result = await groupCollection.findOne({ _id: new ObjectId(id) });
       res.send(result);
     });
 
-    //Popular hobbies
     app.get("/popular-hobbies", async (req, res) => {
       const result = await groupCollection
         .find({})
-        .sort({ member: -1 }) // Sort by max members
+        .sort({ member: -1 })
         .limit(8)
         .toArray();
       res.send(result);
     });
-    //  POST new group
+
     app.post("/allgroups", async (req, res) => {
       const groupData = req.body;
       const result = await groupCollection.insertOne(groupData);
       res.send(result);
     });
 
-    // PUT update group
     app.put("/allgroups/:id", async (req, res) => {
       const id = req.params.id;
+      if (!ObjectId.isValid(id)) {
+        return res.status(400).send({ message: "Invalid ID" });
+      }
       const filter = { _id: new ObjectId(id) };
-      const options = { upsert: true };
       const updatedGroup = req.body;
-      const updatedDoc = {
-        $set: updatedGroup,
-      };
       const result = await groupCollection.updateOne(
         filter,
-        updatedDoc,
-        options
+        { $set: updatedGroup },
+        { upsert: true }
       );
       res.send(result);
     });
 
-    // DELETE group
     app.delete("/allgroups/:id", async (req, res) => {
       const id = req.params.id;
-      const query = { _id: new ObjectId(id) };
-      const result = await groupCollection.deleteOne(query);
+      if (!ObjectId.isValid(id)) {
+        return res.status(400).send({ message: "Invalid ID" });
+      }
+      const result = await groupCollection.deleteOne({ _id: new ObjectId(id) });
       res.send(result);
     });
 
-    // Get all reviews
+    // ---------------- REVIEW ROUTES ----------------
+
     app.get("/reviews", async (req, res) => {
       const result = await reviewCollection.find().toArray();
       res.send(result);
     });
 
-    // Add a review
     app.post("/reviews", async (req, res) => {
-      const review = req.body;
-      const result = await reviewCollection.insertOne(review);
+      const { email } = req.body;
+      const exists = await reviewCollection.findOne({ email });
+      if (exists) {
+        return res.status(400).send({ message: "You have already reviewed." });
+      }
+      const result = await reviewCollection.insertOne(req.body);
       res.send(result);
     });
 
-    // Update a review
     app.put("/reviews/:id", async (req, res) => {
       const id = req.params.id;
       const updated = req.body;
-      const result = await reviewCollection.updateOne(
-        { _id: new ObjectId(id) },
-        { $set: updated }
-      );
-      res.send(result);
+      const{_id, ...rest} = updated;
+      try {
+        const result = await reviewCollection.updateOne(
+          { _id: new ObjectId(id) },
+          { $set: rest },
+        );
+        res.send(result);
+      } catch (error) {
+        console.error("PUT /reviews/:id error:", error.message);
+        res.status(500).send({ message: "Internal Server Error" });
+      }
     });
 
-    // Delete a review
     app.delete("/reviews/:id", async (req, res) => {
       const id = req.params.id;
+      if (!ObjectId.isValid(id)) {
+        return res.status(400).send({ message: "Invalid review ID" });
+      }
       const result = await reviewCollection.deleteOne({
         _id: new ObjectId(id),
       });
       res.send(result);
     });
 
-    console.log(" Connected to MongoDB");
+    console.log("Connected to MongoDB");
   } finally {
+   
   }
 }
 
 run().catch(console.dir);
 
+
+
 app.get("/", (req, res) => {
-  res.send("My hobby website backend is running");
+  res.send("HobbyHub backend is running.");
 });
 
 app.listen(port, () => {
