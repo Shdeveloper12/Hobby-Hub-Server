@@ -55,6 +55,7 @@ async function run() {
 
     app.post("/allgroups", async (req, res) => {
       const groupData = req.body;
+      groupData.createdAt = new Date();
       const result = await groupCollection.insertOne(groupData);
       res.send(result);
     });
